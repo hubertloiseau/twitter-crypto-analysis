@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 from twython import TwythonStreamer
 import string
-from multiprocessing import Process, Pipe
 from threading import Thread
-import logging
 import csv
-import sys
-from _thread import start_new_thread
 import datetime
 from textblob import TextBlob
 import re
 import time
+
 APP_KEY = ''
 APP_SECRET = ''
 ACCESS_TOKEN = ''
@@ -21,17 +18,8 @@ crypto_list = {
 'bitcoin_acronyms' : ['btc','bitcoin','xbt'],
 'ethereum_acronyms' : ['eth','ethereum','ether'],
 'district0x_acronyms' : ['dnt','district0x'],
-'omisego_acronyms' : ['omg','omisego'],
-'litecoin_acronyms' : ['ltc','litecoin'],
-
-
-
 }
 
-
-bitcoin_acronyms = ['btc','bitcoin','xbt']
-ethereum_acronyms = ['eth','ethereum','ether']
-district_acronyms = ['dnt', 'district0x']
 
 def clean_tweet(tweet):
 	'''
@@ -58,18 +46,15 @@ def get_tweet_sentiment(tweet):
 
 class MyStreamer(TwythonStreamer):
 
-	hot  = ['buy','up'	,'increase ','rise' ,'expand' , 'hold', 'hodl', 'moon','pump','bull','bullish','uptrend','rally']
+	hot  = ['buy','up','increase ','rise' ,'expand' , 'hold', 'hodl', 'moon','pump','bull','bullish','uptrend','rally']
 	cold = ['sell','down','decrease','bear','bearish','dump','downtrend','sell','dip']
 	count = 0.0
 	heat = 0.0
 	sentiment_count = 0.0
+
 	def __init__(self,APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET,currency):
 		super(self.__class__,self).__init__(APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 		self.currency_name = currency[0]
-
-	# def __init__(self, APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET,currency):
-	# 	super().__init__(APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET,currency)
-	# 	self.currency_name = currency[0]
 
 	def on_success(self, data):
 		if 'text' in data.keys(): 
@@ -85,7 +70,6 @@ class MyStreamer(TwythonStreamer):
 				self.sentiment_count += 1
 			elif sentiment == 'negative':
 				self.sentiment_count -= 1
-
 
 			self.count += 1
 
@@ -118,30 +102,24 @@ class MyStreamer(TwythonStreamer):
 		print (status_code)
 
 
-
-
-
 def twitter_listener(APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET, currency):    
 	streamer = MyStreamer(APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET,currency)
 	streamer.statuses.filter(track=currency, language='en')
 
-
-
-
-
 if __name__ == '__main__':
 
-
-	streamlist = [None] * len(crypto_list)
 	cpt = 0
+	streamlist = [None] * len(crypto_list)
 	try:
 		for crypto in crypto_list.keys():
 			streamlist[cpt] = MyStreamer(APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET,currency=crypto_list[crypto])
 			p=Thread(target = twitter_listener, args = (APP_KEY, APP_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET, [crypto_list[crypto][0]], ))
 			p.daemon=True
 			p.start()
-			cpt += 1
+			p.setName(crypto_list[crypto][0])
 			print crypto_list[crypto]
+			cpt+=1
+
 		print streamlist
 		while True: time.sleep(100)
 
