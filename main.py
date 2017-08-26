@@ -8,18 +8,26 @@ import datetime
 from textblob import TextBlob
 import re
 import time
+import requests
+import json
 
-APP_KEY = ''
-APP_SECRET = ''
-ACCESS_TOKEN = ''
+APP_KEY 			= ''
+APP_SECRET 			= ''
+ACCESS_TOKEN 		= ''
 ACCESS_TOKEN_SECRET = ''
-
+	
 crypto_list = {
 'bitcoin_acronyms' : ['btc','bitcoin','xbt'],
-'ethereum_acronyms' : ['eth','ethereum','ether'],
-'district0x_acronyms' : ['dnt','district0x'],
+# 'ethereum_acronyms' : ['eth','ethereum','ether'],
+# 'district0x_acronyms' : ['dnt','district0x'],
 }
 
+
+def get_btc_price():
+	url = 'https://api.coindesk.com/v1/bpi/currentprice.json'
+	r = requests.get(url)
+	result = json.loads(r.text)
+	return float(result['bpi']['EUR']['rate'].replace(',',''))
 
 def clean_tweet(tweet):
 	'''
@@ -83,9 +91,12 @@ class MyStreamer(TwythonStreamer):
 
 				self.heatness = float(self.heat/self.count)
 				current_date = datetime.datetime.now()
-				current_date = current_date.strftime('%d/%m/%y %H:%S')
+				current_date = current_date.strftime('%d/%m/%y %H:%M:%S')
 				self.sentiment_value = float(self.sentiment_count/self.count)
-				results.append([self.currency_name,current_date,self.heatness,self.sentiment_value])
+
+				btc_price = get_btc_price()
+
+				results.append([self.currency_name,current_date,self.heatness,self.sentiment_value,btc_price])
 
 				with open('output.csv', 'a') as csvfile:
 					spamwriter = csv.writer(csvfile, delimiter=';', quotechar='|')
